@@ -14,9 +14,11 @@ module Agent
       #   {"a":1,"b":2} and {"b":2,"a":1} produce the same digest.
       # - idem_key is OPTIONAL; when present it is part of the hash, otherwise omitted.
       def build(op:, params:, caller_id:, idem_key: nil)
+        safe_params = params.is_a?(Hash) || params.is_a?(Array) ? params : {}
+
         payload = {
           op: op.to_s,
-          params: canonicalize(params),
+          params: canonicalize(safe_params),
           caller: caller_id.to_s
         }
         payload[:idem_key] = idem_key.to_s unless idem_key.nil?

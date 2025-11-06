@@ -16,7 +16,7 @@ module Agent
                   :async_default,
                   :async_for_ops,
                   :retry_policy,
-                  :provider,
+                  :provider
 
     def initialize
       @redis_url          = ENV['ORCH_REDIS_URL'] || 'redis://127.0.0.1:6379/0'
