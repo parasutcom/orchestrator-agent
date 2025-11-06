@@ -24,11 +24,6 @@ module Agent
       # Align lock namespace with the idempotency entry
       Lock.new("idem:#{key}", ttl: Agent.config.lock_ttl).with_lock do
         hit, value = Idempotency::Store.fetch_or_store(key: key, ttl: Agent.config.idempotency_ttl) do
-          puts '================================================='
-          puts 'invoking operation...'
-          puts op_name.inspect
-          puts params.inspect
-          puts '================================================='
           invoke!(op_name, params)
         end
 
@@ -56,12 +51,8 @@ module Agent
       op = Agent.fetch(op_name)
       raise UnknownOperation, "unknown operation: #{op_name}" unless op
 
-      puts '================================================='
-      puts op.inspect
-
       kwargs = symbolize_keys(params)
 
-      puts '================================================='
       puts kwargs.inspect
       # 1) Callable (adapters like RakeTask, SidekiqJob)
       return op.call(**kwargs) if op.respond_to?(:call) && !op.is_a?(Class)
