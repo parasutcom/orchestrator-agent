@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
 require 'action_controller/api'
+require 'erb'
+require 'kramdown'
 require 'openssl'
 require 'rack/utils'
 require 'securerandom'
+require 'yaml'
 
 module Agent
   class ExecutionsController < ActionController::API
@@ -21,11 +24,11 @@ module Agent
     def create
       # unwrap nested JSON bodies like { execution: {...} } or { api: {...} }
       payload = params[:execution] || params[:api] || params
-    
+
       # permit top-level attributes and allow nested params hash
       permitted = payload.permit(:operation, :caller, :idem_key, :async, params: {})
       raw_params = permitted[:params]
-    
+
       # normalize params → always plain hash with string keys
       op_params =
         if raw_params.is_a?(ActionController::Parameters)
@@ -33,17 +36,17 @@ module Agent
         else
           raw_params || {}
         end
-    
+
       op_name   = permitted[:operation].to_s
       caller_id = permitted[:caller].to_s
       idem_key  = (permitted[:idem_key].presence || SecureRandom.hex(12)).to_s
-    
+
       # decide whether to run async (using config defaults and per-op overrides)
       async_flag      = truthy?(permitted[:async])
       cfg_async_def   = Agent.config.respond_to?(:async_default) && Agent.config.async_default
       cfg_async_map   = Agent.config.respond_to?(:async_for_ops) && Agent.config.async_for_ops || {}
       requested_async = async_flag || cfg_async_def || cfg_async_map[op_name]
-    
+
       if requested_async
         Agent::ExecuteJob.perform_async(idem_key, op_name, op_params, caller_id)
         return render json: {
@@ -52,7 +55,7 @@ module Agent
           idem_key: idem_key
         }, status: :accepted
       end
-    
+
       # synchronous path
       result = Agent::Executor.new.execute(
         operation: op_name,
@@ -60,7 +63,7 @@ module Agent
         caller_id: caller_id,
         idem_key: idem_key
       )
-    
+
       render json: { status: 'ok', result: result }
     rescue StandardError => e
       ::Rails.logger.error("Agent execution error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}")
@@ -88,22 +91,22 @@ module Agent
     def fetch_task
       task_name = params[:task].to_s
       return render json: { error: 'missing task param' }, status: :unprocessable_entity if task_name.blank?
-    
+
       load_tasks_if_needed
-    
+
       allowed_ops   = Agent.config.allowed_operations || []
       provider_name = Agent.config.provider || Rails.application.class.module_parent_name.underscore
-    
+
       # find the single allowed task
       task = Rake::Task.tasks.find do |t|
         allowed_task?(t, allowed_ops) && t.name == task_name
       end
-    
+
       return render json: { error: "task not found: #{task_name}" }, status: :not_found unless task
-    
+
       task_data = build_task_metadata(task, provider_name)
       render json: task_data
-    rescue => e
+    rescue StandardError => e
       ::Rails.logger.error("Agent fetch_task error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}")
       render json: { error: e.message }, status: :internal_server_error
     end
@@ -112,7 +115,7 @@ module Agent
       load_tasks_if_needed
       allowed = fetch_allowed_tasks
       render json: { tasks: allowed }
-    rescue => e
+    rescue StandardError => e
       ::Rails.logger.error("Agent rake tasks fetch error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}")
       render json: { tasks: [] }, status: :internal_server_error
     end
@@ -180,7 +183,7 @@ module Agent
     end
 
     def instructions_for_task(task_name)
-      return "_Task name is missing._" if task_name.blank?
+      return '_Task name is missing._' if task_name.blank?
 
       mapping = rake_task_docs_mapping
       relative_path = mapping[task_name]
@@ -202,8 +205,6 @@ module Agent
     end
 
     def md_to_html(md_content)
-      require 'kramdown'
-      require 'kramdown-parser-gfm'
       Kramdown::Document.new(md_content, input: 'GFM').to_html
     end
 

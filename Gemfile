@@ -13,8 +13,9 @@ gem 'sidekiq'
 
 gem 'redis'
 
-gem 'kramdown'
-gem 'kramdown-parser-gfm'
+# Gemfile
+gem 'kramdown', '~> 2.3.2'
+gem 'kramdown-parser-gfm', '~> 1.1.0'
 
 gem 'rubocop'
 gem 'rubocop-performance', require: false

@@ -2,6 +2,8 @@ PATH
   remote: .
   specs:
     orchestrator-agent (0.1.0)
+      kramdown (~> 2.3.2)
+      kramdown-parser-gfm (~> 1.1.0)
 
 GEM
   remote: https://rubygems.org/
@@ -30,8 +32,8 @@ GEM
       guard (~> 2.0)
       rubocop (~> 0.20)
     jaro_winkler (1.5.4)
-    kramdown (2.5.1)
-      rexml (>= 3.3.9)
+    kramdown (2.3.2)
+      rexml
     kramdown-parser-gfm (1.1.0)
       kramdown (~> 2.0)
     listen (3.4.0)
@@ -103,8 +105,8 @@ PLATFORMS
 DEPENDENCIES
   guard-rspec
   guard-rubocop
-  kramdown
-  kramdown-parser-gfm
+  kramdown (~> 2.3.2)
+  kramdown-parser-gfm (~> 1.1.0)
   orchestrator-agent!
   rake (~> 13.0)
   redis
