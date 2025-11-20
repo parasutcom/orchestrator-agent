@@ -22,20 +22,25 @@ module Agent
     # POST /.../executions
     # Body JSON: { operation, caller, params: {...}, idem_key?, async? }
     def create
+      request.format = :json
       # unwrap nested JSON bodies like { execution: {...} } or { api: {...} }
       payload = params[:execution] || params[:api] || params
 
       # permit top-level attributes and allow nested params hash
-      permitted = payload.permit(:operation, :caller, :idem_key, :async, params: {})
-      raw_params = permitted[:params]
+      payload = params[:execution] || params[:api] || params
 
-      # normalize params → always plain hash with string keys
-      op_params =
-        if raw_params.is_a?(ActionController::Parameters)
-          raw_params.to_unsafe_h
+      # Permit only top-level keys, skip nested params entirely
+      permitted = payload.permit(:operation, :caller, :idem_key, :async)
+
+      # Extract params manually (Rails 5.0 bug workaround)
+      raw_params =
+        if payload[:params].is_a?(ActionController::Parameters)
+          payload[:params].to_unsafe_h
         else
-          raw_params || {}
+          payload[:params] || {}
         end
+
+      op_params = raw_params
 
       op_name   = permitted[:operation].to_s
       caller_id = permitted[:caller].to_s
@@ -47,6 +52,8 @@ module Agent
       cfg_async_map   = Agent.config.respond_to?(:async_for_ops) && Agent.config.async_for_ops || {}
       requested_async = async_flag || cfg_async_def || cfg_async_map[op_name]
 
+      binding.pry
+      
       if requested_async
         Agent::ExecuteJob.perform_async(idem_key, op_name, op_params, caller_id)
         return render json: {
