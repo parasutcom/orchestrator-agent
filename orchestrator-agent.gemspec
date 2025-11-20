@@ -4,7 +4,7 @@ require_relative 'lib/agent/version'
 
 Gem::Specification.new do |spec|
   spec.name = 'orchestrator-agent'
-  spec.version = '0.1.2'
+  spec.version = '0.1.3'
   spec.authors = ['berksurmeli']
   spec.email = ['hasan.surmeli@parasut.com']
 

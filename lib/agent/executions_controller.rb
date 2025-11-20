@@ -52,8 +52,6 @@ module Agent
       cfg_async_map   = Agent.config.respond_to?(:async_for_ops) && Agent.config.async_for_ops || {}
       requested_async = async_flag || cfg_async_def || cfg_async_map[op_name]
 
-      binding.pry
-      
       if requested_async
         Agent::ExecuteJob.perform_async(idem_key, op_name, op_params, caller_id)
         return render json: {
