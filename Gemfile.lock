@@ -53,7 +53,7 @@ GEM
       coderay (~> 1.1)
       method_source (~> 1.0)
     racc (1.8.1)
-    rack (2.2.20)
+    rack (2.2.22)
     rainbow (3.0.0)
     rake (13.3.0)
     rb-fsevent (0.10.4)
@@ -101,6 +101,7 @@ GEM
 
 PLATFORMS
   arm64-darwin-24
+  x86_64-linux
 
 DEPENDENCIES
   guard-rspec
